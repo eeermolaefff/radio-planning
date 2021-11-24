@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.Slider?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.text.Text?>
+
+<AnchorPane prefHeight="700.0" prefWidth="900.0" style="-fx-background-color: #fff;" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="GUI.Controller">
+   <children>
+      <MenuBar layoutY="1.0" prefHeight="26.0" prefWidth="900.0">
+        <menus>
+          <Menu mnemonicParsing="false" text="File">
+            <items>
+                  <MenuItem fx:id="openFileButton" mnemonicParsing="false" text="Open" />
+              <MenuItem fx:id="closeFileButton" mnemonicParsing="false" text="Close" />
+            </items>
+          </Menu>
+          <Menu mnemonicParsing="false" text="Edit">
+            <items>
+              <MenuItem mnemonicParsing="false" text="Delete" />
+            </items>
+          </Menu>
+          <Menu mnemonicParsing="false" text="Help">
+            <items>
+              <MenuItem mnemonicParsing="false" text="About" />
+            </items>
+          </Menu>
+        </menus>
+      </MenuBar>
+      <ChoiceBox fx:id="floorChoiceBox" layoutX="375.0" layoutY="35.0" prefWidth="150.0" />
+      <TextField fx:id="kernelSizeField" alignment="CENTER" layoutX="13.0" layoutY="177.0" prefHeight="26.0" prefWidth="83.0" />
+      <Text layoutX="14.0" layoutY="172.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Kernel size:">
+         <font>
+            <Font size="15.0" />
+         </font>
+      </Text>
+      <TextField fx:id="offsetYField" alignment="CENTER" layoutX="13.0" layoutY="271.0" prefHeight="26.0" prefWidth="83.0" />
+      <Text layoutX="14.0" layoutY="267.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Offset Y:">
+         <font>
+            <Font size="15.0" />
+         </font>
+      </Text>
+      <TextField fx:id="offsetXField" alignment="CENTER" layoutX="13.0" layoutY="224.0" prefHeight="26.0" prefWidth="83.0" />
+      <Text layoutX="14.0" layoutY="220.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Offset X:">
+         <font>
+            <Font size="15.0" />
+         </font>
+      </Text>
+      <TextField fx:id="calibrationField" alignment="CENTER" layoutX="13.0" layoutY="317.0" prefHeight="26.0" prefWidth="83.0" />
+      <Text layoutX="14.0" layoutY="313.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Resolution:">
+         <font>
+            <Font size="15.0" />
+         </font>
+      </Text>
+      <TextField fx:id="minWallLenField" alignment="CENTER" layoutX="13.0" layoutY="363.0" prefHeight="26.0" prefWidth="83.0" />
+      <Text layoutX="14.0" layoutY="359.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Min wall len:">
+         <font>
+            <Font size="15.0" />
+         </font>
+      </Text>
+      <Slider fx:id="kernelSizeSlider" blockIncrement="1.0" layoutX="871.0" layoutY="75.0" majorTickUnit="5.0" max="60.0" minorTickCount="5" orientation="VERTICAL" prefHeight="534.0" prefWidth="14.0" showTickLabels="true" showTickMarks="true" />
+      <Button fx:id="launchButton" alignment="CENTER" layoutX="402.0" layoutY="630.0" mnemonicParsing="false" text="Process">
+         <font>
+            <Font size="20.0" />
+         </font>
+      </Button>
+      <Text fx:id="fileNameTxt" fill="#000000aa" layoutX="798.0" layoutY="55.0" strokeType="OUTSIDE" strokeWidth="0.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="3.0">
+         <font>
+            <Font size="14.0" />
+         </font>
+      </Text>
+      <CheckBox fx:id="defaultCheckbox" layoutX="15.0" layoutY="587.0" mnemonicParsing="false" text="Default" />
+      <CheckBox fx:id="calibrationCheckbox" layoutX="15.0" layoutY="609.0" mnemonicParsing="false" text="Calibrated" />
+      <CheckBox fx:id="outsideCheckbox" layoutX="15.0" layoutY="630.0" mnemonicParsing="false" text="Outside contour" />
+      <Text layoutX="16.0" layoutY="574.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Image mode:" />
+      <CheckBox fx:id="innerCheckbox" layoutX="15.0" layoutY="652.0" mnemonicParsing="false" text="Inner contour" />
+      <HBox alignment="CENTER" layoutX="136.0" layoutY="81.0" prefHeight="100.0" prefWidth="200.0">
+         <children>
+            <ImageView fx:id="floorImage" fitHeight="523.0" fitWidth="720.0" pickOnBounds="true" preserveRatio="true" />
+         </children>
+      </HBox>
+   </children>
+</AnchorPane>
