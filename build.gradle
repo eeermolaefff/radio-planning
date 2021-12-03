@@ -20,8 +20,8 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
     implementation files('D:/IntelliJ IDEA Community Edition 2021.2.3/lib/commons-logging-1.2.1.1.jar',
-            'D:/IntelliJ IDEA Community Edition 2021.2.3/lib/fontbox-1.8.16.jar',
-            'D:/IntelliJ IDEA Community Edition 2021.2.3/lib/pdfbox-1.8.16.jar'
+            'D:/IntelliJ IDEA Community Edition 2021.2.3/lib/pdfbox-3.0.0-alpha2.jar',
+            'D:/IntelliJ IDEA Community Edition 2021.2.3/lib/fontbox-3.0.0-alpha2.jar'
     )
 }
 
@@ -43,10 +43,6 @@ repositories {
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
-
-test {
-    systemProperty "java.library.path", file("${buildDir}/libs/hello/shared").absolutePath
-}
 
 model {
     platforms {

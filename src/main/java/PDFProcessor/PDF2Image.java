@@ -1,32 +1,35 @@
 package PDFProcessor;
 
+import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.PDPage;
-import org.apache.pdfbox.util.ImageIOUtil;
 
+import org.apache.pdfbox.rendering.ImageType;
+import org.apache.pdfbox.rendering.PDFRenderer;
+
+import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 
 public class PDF2Image {
-    public static int splitPDF(String pdfFileName) throws IOException {
-        String format = ".jpeg";
-        PDDocument document = PDDocument.loadNonSeq(new File(pdfFileName), null);
-        List<PDPage> pdPages = document.getDocumentCatalog().getAllPages();
-        int pageNumber = 0;
-        for (PDPage pdPage : pdPages) {
-            ++pageNumber;
-            BufferedImage BI = pdPage.convertToImage(BufferedImage.TYPE_BYTE_BINARY, 100);
-            String dir = "./" + "Floor " + pageNumber;
+    public static int splitPDF(String pdfFileName, int dpi, String format) throws IOException {
+        PDDocument document = Loader.loadPDF(new File(pdfFileName));
+        PDFRenderer pdfRenderer = new PDFRenderer(document);
+        int pageNumber;
+        for (pageNumber = 0; pageNumber < document.getNumberOfPages(); pageNumber++) {
+            BufferedImage BI = pdfRenderer.renderImageWithDPI(pageNumber, dpi, ImageType.BINARY);
+
+            String dir = "./" + "Floor " + (pageNumber + 1);
             new File(dir).mkdirs();
-            ImageIOUtil.writeImage(BI, dir +"/floor" + format, 100);
+
+            ImageIO.write(BI, format.substring(1), new File(dir + "/floor" + format));
         };
 
         document.close();
         return pageNumber;
+
     }
     public static void main(String[] args) throws IOException {
-        int k = PDF2Image.splitPDF("test.pdf");
+
     }
 }

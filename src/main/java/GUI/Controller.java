@@ -1,5 +1,7 @@
 package GUI;
 
+import OIP.ImageProcessor;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
@@ -8,6 +10,9 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.Slider;
 import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.HBox;
 import javafx.scene.text.Text;
 import PDFProcessor.PDF2Image;
 import Robot.MyRobot;
@@ -15,14 +20,26 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.image.Image;
 import javafx.stage.FileChooser;
+
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 
 public class Controller {
+    @FXML
+    private TextField DPIField;
+
+    @FXML
+    private TextField calibrationDifferenceField;
+
+    @FXML
+    private CheckBox fillTableCheckbox;
 
     @FXML
     private CheckBox defaultCheckbox;
+
+    @FXML
+    private HBox imageVIewHBOX;
 
     @FXML
     private CheckBox calibrationCheckbox;
@@ -35,9 +52,6 @@ public class Controller {
 
     @FXML
     private Text fileNameTxt;
-
-    @FXML
-    private TextField calibrationField;
 
     @FXML
     private MenuItem closeFileButton;
@@ -61,48 +75,128 @@ public class Controller {
     private TextField minWallLenField;
 
     @FXML
-    private TextField offsetXField;
-
-    @FXML
-    private TextField offsetYField;
-
-    @FXML
     private MenuItem openFileButton;
 
+    enum ChosenCheckbox {DEFAULT, CALIBRATION, OUTSIDE, INNER};
+    enum EnvCondition {fileChoosing, floorChoosing, preCalibrationMode, calibrationMode, launchMode};
+
     private class Configuration {
-        public boolean _defaultCheckbox, _calibrationCheckbox, _outsideCheckbox, _innerCheckbox;
-        public boolean _calibrationField, _kernelSizeField, _minWallLenField, _offsetXField, _offsetYField;
-        public boolean _floorChoiceBox;
-        public boolean _kernelSizeSlider;
-        public boolean _launchButton;
-
-        public Configuration() {
-
-        }
+        public boolean fillTable;
+        public EnvCondition env = EnvCondition.fileChoosing;
+        public Integer kernelSize = 0;
+        public Integer minWallLen = 0;
+        public Integer contourExp = 2;
+        ChosenCheckbox checkbox = null;
 
         public void update() {
-            defaultCheckbox.setDisable(!_defaultCheckbox);
-            calibrationCheckbox.setDisable(!_calibrationCheckbox);
-            outsideCheckbox.setDisable(!_outsideCheckbox);
-            innerCheckbox.setDisable(!_innerCheckbox);
-            calibrationField.setDisable(!_calibrationField);
-            kernelSizeField.setDisable(!_kernelSizeField);
-            minWallLenField.setDisable(!_minWallLenField);
-            offsetXField.setDisable(!_offsetXField);
-            offsetYField.setDisable(!_offsetYField);
-            floorChoiceBox.setDisable(!_floorChoiceBox);
-            kernelSizeSlider.setDisable(!_kernelSizeSlider);
-            launchButton.setDisable(!_launchButton);
+            DPIField.setText(DPI.toString());
+            calibrationDifferenceField.setText(calibrationDifference.toString());
+
+            kernelSizeSlider.setValue(kernelSize);
+
+            switch (env) {
+                case fileChoosing:
+                    floorChoiceBox.setDisable(true);
+                    kernelSizeSlider.setDisable(true);
+                    kernelSizeField.setDisable(true);
+                    minWallLenField.setDisable(true);
+                    calibrationDifferenceField.setDisable(true);
+                    DPIField.setDisable(true);
+                    fillTableCheckbox.setDisable(true);
+                    calibrationCheckbox.setDisable(true);
+                    defaultCheckbox.setDisable(true);
+                    outsideCheckbox.setDisable(true);
+                    innerCheckbox.setDisable(true);
+                    launchButton.setDisable(true);
+                    break;
+                case floorChoosing:
+                    floorChoiceBox.setDisable(false);
+                    kernelSizeSlider.setDisable(true);
+                    kernelSizeField.setDisable(true);
+                    minWallLenField.setDisable(true);
+                    calibrationDifferenceField.setDisable(true);
+                    DPIField.setDisable(true);
+                    fillTableCheckbox.setDisable(true);
+                    calibrationCheckbox.setDisable(true);
+                    defaultCheckbox.setDisable(true);
+                    outsideCheckbox.setDisable(true);
+                    innerCheckbox.setDisable(true);
+                    launchButton.setDisable(true);
+                    break;
+                case preCalibrationMode:
+                    floorChoiceBox.setDisable(false);
+                    kernelSizeSlider.setDisable(false);
+                    kernelSizeField.setDisable(false);
+                    minWallLenField.setDisable(false);
+                    calibrationDifferenceField.setDisable(false);
+                    DPIField.setDisable(false);
+                    fillTableCheckbox.setDisable(false);
+                    calibrationCheckbox.setDisable(true);
+                    defaultCheckbox.setDisable(true);
+                    outsideCheckbox.setDisable(true);
+                    innerCheckbox.setDisable(true);
+                    launchButton.setDisable(true);
+                    break;
+                case calibrationMode:
+                    floorChoiceBox.setDisable(false);
+                    kernelSizeSlider.setDisable(false);
+                    kernelSizeField.setDisable(false);
+                    minWallLenField.setDisable(false);
+                    calibrationDifferenceField.setDisable(false);
+                    DPIField.setDisable(false);
+                    fillTableCheckbox.setDisable(false);
+                    calibrationCheckbox.setDisable(false);
+                    defaultCheckbox.setDisable(false);
+                    outsideCheckbox.setDisable(true);
+                    innerCheckbox.setDisable(true);
+                    launchButton.setDisable(false);
+                    break;
+                case launchMode:
+                    floorChoiceBox.setDisable(false);
+                    kernelSizeSlider.setDisable(false);
+                    kernelSizeField.setDisable(false);
+                    minWallLenField.setDisable(false);
+                    calibrationDifferenceField.setDisable(false);
+                    DPIField.setDisable(false);
+                    fillTableCheckbox.setDisable(false);
+                    calibrationCheckbox.setDisable(false);
+                    defaultCheckbox.setDisable(false);
+                    outsideCheckbox.setDisable(false);
+                    innerCheckbox.setDisable(false);
+                    launchButton.setDisable(false);
+                    break;
+            }
+
+            if (checkbox != null)
+                switch (checkbox) {
+                    case INNER:
+                        innerCheckbox.setSelected(false);
+                        innerCheckbox.setSelected(true);
+                        break;
+                    case OUTSIDE:
+                        outsideCheckbox.setSelected(false);
+                        outsideCheckbox.setSelected(true);
+                        break;
+                    case CALIBRATION:
+                        calibrationCheckbox.setSelected(false);
+                        calibrationCheckbox.setSelected(true);
+                        break;
+                    case DEFAULT:
+                        defaultCheckbox.setSelected(false);
+                        defaultCheckbox.setSelected(true);
+                        break;
+                }
+
         }
     }
 
-
-    String projectDir = "D:/MyPerfectApp/";
-    MyRobot robot;
-    int _kernelSize = 0, _minWallLen = 0, _contourExp = 2, _offsetX = -1, _offsetY = -1, _resolution = -1;
-    Configuration[] configurations;
-    int config_idx;
-
+    private String projectDir;
+    private String selectedFilePath;
+    private Integer calibrationDifference = 1;
+    private Integer DPI = 100;
+    private final String format = ".png";
+    private Configuration[] configurations;
+    private int current_config;
 
     private void clearDir() {
         for (String dirName : floorChoiceBox.getItems()) {
@@ -116,38 +210,39 @@ public class Controller {
 
     private void setFloorImage(String fileName) {
         String filePath = projectDir + floorChoiceBox.getValue() + "/";
-        Image croppedImage = new Image(filePath + fileName, floorImage.getFitWidth(), floorImage.getFitHeight(), true, true);
+        Image croppedImage = new Image(filePath + fileName,  imageVIewHBOX.getWidth(), imageVIewHBOX.getHeight(), true, true);
         floorImage.setImage(croppedImage);
         croppedImage.cancel();
     }
 
     private void disableEnvironment() {
-        _kernelSize = 0;
-        _minWallLen = 0;
-        _contourExp = 2;
-        _offsetX = -1;
-        _offsetY = -1;
-        _resolution = -1;
-
+        floorImage.setImage(null);
+        clearDir();
+        fileNameTxt.setText("");
+        floorChoiceBox.getItems().clear();
+        new Configuration().update();
         configurations = null;
-        new Configuration().update();////////////////////////
+        selectedFilePath = null;
+        calibrationDifference = 1;
+        DPI = 100;
     }
 
     @FXML
-    void initialize() throws AWTException {
-        robot = new MyRobot();
-
-        disableEnvironment();
+    void initialize() {
+        projectDir = System.getProperty("user.dir") + "/";
+        new Configuration().update();
 
         openFileButton.setOnAction(event -> {
             int numberOfPages = 0;
             FileChooser fc = new FileChooser();
+            fc.setInitialDirectory(new File("E:/Clean"));
             File selectedFile = fc.showOpenDialog(null);
             if (selectedFile != null) {
+                selectedFilePath = selectedFile.getAbsolutePath();
                 try {
-                    numberOfPages = PDF2Image.splitPDF(selectedFile.getAbsolutePath());
+                    numberOfPages = PDF2Image.splitPDF(selectedFilePath, 100, format);
                 } catch (IOException e) {
-                    fileNameTxt.setText("Error");
+                    fileNameTxt.setText("Couldn't open PDF file");
                 }
 
                 configurations = new Configuration[numberOfPages];
@@ -156,12 +251,12 @@ public class Controller {
                 for (int i = 0; i < numberOfPages; i++) {
                     floors[i] = "Floor " + (i+1);
                     configurations[i] = new Configuration();
-                    configurations[i]._floorChoiceBox = true;
+                    configurations[i].env = EnvCondition.floorChoosing;
                 }
 
-                configurations[0].update();
                 floorChoiceBox.getItems().addAll(floors);
                 fileNameTxt.setText(selectedFile.getName());
+                configurations[0].update();
             }
             else {
                 fileNameTxt.setText("Error");
@@ -169,97 +264,169 @@ public class Controller {
         });
 
         closeFileButton.setOnAction(event -> {
-            floorImage.setImage(null);
-            _kernelSize = 0;
-            _minWallLen = 0;
-            clearDir();
-            kernelSizeField.setText("");
-            offsetXField.setText("");
-            offsetYField.setText("");
-            calibrationField.setText("");
-            minWallLenField.setText("");
-            fileNameTxt.setText("");
-            floorChoiceBox.getItems().clear();
             disableEnvironment();
         });
 
-        floorChoiceBox.setOnAction(event -> {
-            String floor = floorChoiceBox.getValue();
-            if (floor != null) {
-                config_idx = Integer.parseInt(floor.split(" ")[1]) - 1;
-                configurations[config_idx]._kernelSizeField = true;
-                configurations[config_idx]._minWallLenField = true;
-                configurations[config_idx]._kernelSizeSlider = true;
-                configurations[config_idx].update();
+        floorChoiceBox.getSelectionModel().selectedItemProperty().addListener(
+                (ObservableValue<? extends String> observable, String oldValue, String newValue) ->  {
+                    if (newValue != null && !newValue.equals(oldValue)) {
+                        current_config = Integer.parseInt(newValue.split(" ")[1]) - 1;
+                        if (configurations[current_config].env == EnvCondition.floorChoosing) {
+                            configurations[current_config].env = EnvCondition.preCalibrationMode;
+                            configurations[current_config].checkbox = ChosenCheckbox.DEFAULT;
+                        }
 
-                String imagePath = projectDir + floor + "/floor.jpeg";
-                Image croppedImage = new Image(imagePath, floorImage.getFitWidth(), floorImage.getFitHeight(), true, true);
-                floorImage.setImage(croppedImage);
-                croppedImage.cancel();
-            }
-        });
+                        if (configurations[current_config].env == EnvCondition.launchMode)
+                            launchButton.setText("Launch");
+                        else
+                            launchButton.setText("Process");
+
+                        configurations[current_config].update();
+                        if (configurations[current_config].checkbox == null) {
+                            configurations[current_config].checkbox = ChosenCheckbox.DEFAULT;
+                        }
+                    }
+                } );
 
         kernelSizeSlider.valueProperty().addListener(new ChangeListener<Number>() {
             @Override
             public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-                Integer kernelSize = (int) kernelSizeSlider.getValue();
-                Integer wallLen = kernelSize * 3;
-                _kernelSize = kernelSize;
-                _minWallLen = wallLen;
-                kernelSizeField.setText(kernelSize.toString());
-                minWallLenField.setText(wallLen.toString());
-                launchButton.setText("Process");
+                if (configurations != null) {
+                    Integer kernelSize = (int) kernelSizeSlider.getValue();
+                    Integer wallLen = kernelSize * 3;
+                    configurations[current_config].kernelSize = kernelSize;
+                    configurations[current_config].minWallLen = wallLen;
+                    kernelSizeField.setText(kernelSize == 0 ? "" : kernelSize.toString());
+                    minWallLenField.setText(kernelSize == 0 ? "" : wallLen.toString());
+                }
             }
         });
 
         kernelSizeSlider.setOnMouseReleased(event -> {
-            String filePath = projectDir + floorChoiceBox.getValue() + "/";
-            robot.imageCalibration(filePath + "floor.jpeg", Integer.parseInt(kernelSizeField.getText()));
-
-            if (launchButton.isDisable()) {
-                configurations[config_idx]._launchButton = true;
-                configurations[config_idx]._calibrationCheckbox = true;
-                configurations[config_idx]._defaultCheckbox = true;
-                configurations[config_idx].update();
+            String field = kernelSizeField.getText();
+            if (field.equals("")) {
+                configurations[current_config].env = EnvCondition.preCalibrationMode;
+                configurations[current_config].checkbox = ChosenCheckbox.DEFAULT;
             }
-            calibrationCheckbox.setSelected(false);
-            calibrationCheckbox.setSelected(true);
+            else {
+                String filePath = projectDir + floorChoiceBox.getValue() + "/";
+                ImageProcessor.imageCalibration(filePath + "floor" + format,
+                        Integer.parseInt(field), configurations[current_config].fillTable, calibrationDifference);
+                configurations[current_config].checkbox = ChosenCheckbox.CALIBRATION;
+                configurations[current_config].env = EnvCondition.calibrationMode;
+            }
+
+            configurations[current_config].update();
+            launchButton.setText("Process");
         });
 
-        kernelSizeField.textProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue.equals(""))
-                kernelSizeSlider.setValue(0);
-            else if (!newValue.matches("\\d*"))
-                kernelSizeField.setText(oldValue);
-            else
-                kernelSizeSlider.setValue(Integer.parseInt(newValue));
+        kernelSizeField.setOnKeyPressed(new EventHandler<KeyEvent>() {
+            @Override
+            public void handle(KeyEvent event) {
+                if (!event.getCode().equals(KeyCode.ENTER))
+                    return;
+
+                String newValue = kernelSizeField.getText();
+                if (newValue == null || newValue.equals("") || !newValue.matches("\\d*"))
+                    kernelSizeSlider.setValue(0);
+                else {
+                    int val = Integer.parseInt(newValue);
+                    kernelSizeSlider.setValue(val);
+
+                    if (val == 0) {
+                        configurations[current_config].env = EnvCondition.preCalibrationMode;
+                        configurations[current_config].checkbox = ChosenCheckbox.DEFAULT;
+                    }
+                    else {
+                        configurations[current_config].env = EnvCondition.calibrationMode;
+                        String filePath = projectDir + floorChoiceBox.getValue() + "/";
+                        ImageProcessor.imageCalibration(filePath + "floor" + format,
+                                val, configurations[current_config].fillTable, calibrationDifference);
+                        configurations[current_config].checkbox = ChosenCheckbox.CALIBRATION;
+                    }
+                    configurations[current_config].update();
+                    launchButton.setText("Process");
+                }
+            }
         });
 
-        offsetXField.textProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue.equals(""))
-                _offsetX = -1;
-            else if (!newValue.matches("\\d*"))
-               _offsetX = -1;
-            else
-                _offsetX = Integer.parseInt(newValue);
+        minWallLenField.setOnKeyPressed(new EventHandler<KeyEvent>() {
+            @Override
+            public void handle(KeyEvent event) {
+                if (!event.getCode().equals(KeyCode.ENTER))
+                    return;
+
+                String newValue = minWallLenField.getText();
+                if (newValue == null || newValue.equals("") || newValue.equals("0")  || !newValue.matches("\\d*")) {
+                    minWallLenField.setText("");
+                    configurations[current_config].env = EnvCondition.calibrationMode;
+                }
+                else {
+                    String filePath = projectDir + floorChoiceBox.getValue() + "/";
+                    configurations[current_config].minWallLen = Integer.parseInt(newValue);
+                    ImageProcessor.processImage(filePath + "floor" + format, filePath + "calibration" + format,
+                            configurations[current_config].kernelSize,   configurations[current_config].minWallLen,
+                            configurations[current_config].contourExp);
+                    configurations[current_config].env = EnvCondition.launchMode;
+                    configurations[current_config].checkbox = ChosenCheckbox.INNER;
+                }
+                configurations[current_config].update();
+            }
         });
 
-        offsetYField.textProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue.equals(""))
-                _offsetY = -1;
-            else if (!newValue.matches("\\d*"))
-                _offsetY = -1;
-            else
-                _offsetY = Integer.parseInt(newValue);
+        calibrationDifferenceField.setOnAction(event -> {
+            String newValue = calibrationDifferenceField.getText();
+
+            if (newValue == null || newValue.equals("") || newValue.equals("0") || !newValue.matches("\\d*"))
+                calibrationDifferenceField.setText("");
+            else {
+                calibrationDifference = Integer.parseInt(newValue);
+
+                String filePath = projectDir + floorChoiceBox.getValue() + "/";
+                ImageProcessor.imageCalibration(filePath + "floor" + format, configurations[current_config].kernelSize,
+                        configurations[current_config].fillTable, calibrationDifference);
+
+                configurations[current_config].checkbox = ChosenCheckbox.CALIBRATION;
+                configurations[current_config].update();
+            }
         });
 
-        calibrationField.textProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue.equals(""))
-                _resolution = -1;
-            else if (!newValue.matches("\\d*"))
-                _resolution = -1;
-            else
-                _resolution = Integer.parseInt(newValue);
+        DPIField.setOnAction(event -> {
+            String newValue = DPIField.getText();
+            if (newValue == null || newValue.equals("") || newValue.equals("0") || !newValue.matches("\\d*"))
+                DPIField.setText("");
+            else {
+                DPI = Integer.parseInt(newValue);
+                if (selectedFilePath != null) {
+                    try {
+                        PDF2Image.splitPDF(selectedFilePath, DPI, format);
+                    } catch (IOException e) {
+                        fileNameTxt.setText("Couldn't open PDF file");
+                    }
+
+                    configurations[current_config].env = EnvCondition.calibrationMode;
+                    configurations[current_config].checkbox = ChosenCheckbox.DEFAULT;
+                    kernelSizeSlider.setValue(0);
+
+                    configurations[current_config].update();
+                }
+            }
+        });
+
+        fillTableCheckbox.selectedProperty().addListener(new ChangeListener<Boolean>() {
+            @Override
+            public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
+                String field = kernelSizeField.getText();
+                if (!field.equals("") && !field.equals("0")) {
+                    String filePath = projectDir + floorChoiceBox.getValue() + "/";
+                    ImageProcessor.imageCalibration(filePath + "floor" + format,
+                            Integer.parseInt(field), newValue, calibrationDifference);
+                    configurations[current_config].fillTable = newValue;
+                    configurations[current_config].env = EnvCondition.calibrationMode;
+                    configurations[current_config].checkbox = ChosenCheckbox.CALIBRATION;
+                    configurations[current_config].update();
+                }
+            }
         });
 
         calibrationCheckbox.selectedProperty().addListener(new ChangeListener<Boolean>() {
@@ -269,8 +436,8 @@ public class Controller {
                     defaultCheckbox.setSelected(!newValue);
                     outsideCheckbox.setSelected(!newValue);
                     innerCheckbox.setSelected(!newValue);
-
-                    setFloorImage("calibration.jpeg");
+                    setFloorImage("calibration" + format);
+                    configurations[current_config].checkbox = ChosenCheckbox.CALIBRATION;
                 }
             }
         });
@@ -282,7 +449,8 @@ public class Controller {
                     calibrationCheckbox.setSelected(!newValue);
                     outsideCheckbox.setSelected(!newValue);
                     innerCheckbox.setSelected(!newValue);
-                    setFloorImage("floor.jpeg");
+                    setFloorImage("floor" + format);
+                    configurations[current_config].checkbox = ChosenCheckbox.DEFAULT;
                 }
             }
         });
@@ -294,8 +462,8 @@ public class Controller {
                     calibrationCheckbox.setSelected(!newValue);
                     defaultCheckbox.setSelected(!newValue);
                     innerCheckbox.setSelected(!newValue);
-
-                    setFloorImage("outsideCoverage.jpeg");
+                    setFloorImage("outsideCoverage" + format);
+                    configurations[current_config].checkbox = ChosenCheckbox.OUTSIDE;
                 }
             }
         });
@@ -307,30 +475,37 @@ public class Controller {
                     calibrationCheckbox.setSelected(!newValue);
                     defaultCheckbox.setSelected(!newValue);
                     outsideCheckbox.setSelected(!newValue);
-                    setFloorImage("innerCoverage.jpeg");
+                    setFloorImage("innerCoverage" + format);
+                    configurations[current_config].checkbox = ChosenCheckbox.INNER;
                 }
             }
         });
 
         launchButton.setOnAction(event -> {
             String filePath = projectDir + floorChoiceBox.getValue() + "/";
-            if (launchButton.getText().equals("Process")) {
-                robot.processImage(filePath + "floor.jpeg", filePath + "calibration.jpeg", _kernelSize,  _minWallLen, _contourExp);
+            if (configurations[current_config].env == EnvCondition.calibrationMode) {
+                ImageProcessor.processImage(filePath + "floor" + format, filePath + "calibration" + format,
+                        configurations[current_config].kernelSize,   configurations[current_config].minWallLen,
+                        configurations[current_config].contourExp);
 
-                configurations[config_idx]._offsetXField = true;
-                configurations[config_idx]._offsetYField = true;
-                configurations[config_idx]._calibrationField = true;
-                configurations[config_idx]._innerCheckbox = true;
-                configurations[config_idx]._outsideCheckbox = true;
-                configurations[config_idx].update();
+                configurations[current_config].env = EnvCondition.launchMode;
+                configurations[current_config].checkbox = ChosenCheckbox.INNER;
+                configurations[current_config].update();
 
-                innerCheckbox.setSelected(false);
-                innerCheckbox.setSelected(true);
                 launchButton.setText("Launch");
             }
-            else if(launchButton.getText().equals("Launch")) {
+            else if(configurations[current_config].env == EnvCondition.launchMode) {
                 try {
-                    MyRobot.putContourOnMap(filePath, new MyRobot.Point(_offsetX, _offsetY), _resolution);
+                    MyRobot.openPrevWindow();
+                    for (int i = current_config; i < configurations.length; i++) {
+                        if (configurations[i].env != EnvCondition.launchMode)
+                            continue;
+
+                        filePath = projectDir + "Floor " + (i + 1) + "/";
+                        MyRobot.switchLevel(i);
+                        MyRobot.putContourOnMap(filePath);
+
+                    }
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

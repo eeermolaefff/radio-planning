@@ -1,14 +1,15 @@
 package Robot;
 
+import OIP.ImageProcessor;
+
 import javax.imageio.ImageIO;
 import java.awt.*;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 
 public class MyRobot {
     public static class Point {
@@ -20,25 +21,21 @@ public class MyRobot {
             this.y = y;
         }
     }
-    public native void processImage(String fileName, int kernelSize, int minWallLen, int contourExpansion);
-    public native void processImage(String fileName, String noEnvImage, int kernelSize, int minWallLen, int contourExpansion);
-    public native void imageCalibration(String fileName, int kernelSize);
+    public static Robot robot;
 
     static {
-        System.loadLibrary("opencv_world454");
-        System.loadLibrary("ImageProcessor");
+        try {
+            GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+            robot = new Robot(ge.getDefaultScreenDevice());
+        } catch (AWTException e) {
+            e.printStackTrace();
+        }
     }
-
-    private static Robot robot;
+    private static Integer k = 0;
     private static final int delayDuration = 200;
-    private static final double screenResolutionFactor = 500/625.0;
     private static double imageFactor;
     private static Point offset;
-
-    public MyRobot() throws AWTException {
-        robot = new Robot();
-    }
-    private static void openPrevWindow() {
+    public static void openPrevWindow() {
         robot.keyPress(KeyEvent.VK_ALT);
         robot.delay(50);
         robot.keyPress(KeyEvent.VK_TAB);
@@ -47,15 +44,8 @@ public class MyRobot {
         robot.delay(50);
         robot.keyRelease(KeyEvent.VK_TAB);
     }
-    private static void moveMouseRelatively(Point point) {
-        int relativeX = (int)(point.x * screenResolutionFactor);
-        int relativeY = (int)(point.y * screenResolutionFactor);
-        robot.mouseMove(relativeX, relativeY);
-    }
-    private static void moveMouseRelatively(int x, int y) {
-        int relativeX = (int)(x * screenResolutionFactor);
-        int relativeY = (int)(y * screenResolutionFactor);
-        robot.mouseMove(relativeX, relativeY);
+    private static void moveMouse(Point point) {
+        robot.mouseMove(point.x, point.y);
     }
     private static void clickMouse(int typeEvent) {
         robot.mousePress(typeEvent);
@@ -79,41 +69,58 @@ public class MyRobot {
     }
     private static void takeProperWallType(boolean isInnerContour) {
         Point wallTypePos;
-        if (isInnerContour) wallTypePos = new Point(730, 175);
-        else                wallTypePos = new Point(673, 175);
-        moveMouseRelatively(wallTypePos);
+        if (isInnerContour) wallTypePos = new Point(585, 135);
+        else                wallTypePos = new Point(545, 135);
+        moveMouse(wallTypePos);
         clickMouse(InputEvent.BUTTON1_DOWN_MASK);
 
         robot.delay(delayDuration);
 
-        if (isInnerContour) wallTypePos = new Point(700, 335);
-        else                wallTypePos = new Point(700, 450);
-        moveMouseRelatively(wallTypePos);
+        if (isInnerContour) wallTypePos = new Point(500, 270);
+        else                wallTypePos = new Point(500, 360);
+
+        moveMouse(wallTypePos);
         clickMouse(InputEvent.BUTTON1_DOWN_MASK);
     }
-    private static void setupScreen(String fileName, Point cur_offset, int relativeResolutionX) throws IOException {
-        offset = cur_offset;
+    private static void setupScreen(String fileName) throws IOException {
+        MyRobot.robot.delay(300);
+        String screenName = "screen.jpeg";
+        String offsetName = "offset.txt";
+
+        MyRobot.screenCapture(screenName);
+        ImageProcessor.screenCalibration(screenName);
+
+        File file = new File(offsetName);
+        BufferedReader br = new BufferedReader(new FileReader(file));
+        String[] tokens = br.readLine().split(" ");
+        br.close();
+
+        offset = new Point(Integer.parseInt(tokens[0]), Integer.parseInt(tokens[1]));
+
         BufferedImage picture = ImageIO.read(new File(fileName));
-        imageFactor = (double) relativeResolutionX / (double) picture.getWidth();
+        imageFactor = (double) Integer.parseInt(tokens[2]) / (double) picture.getWidth();
+
+        file.delete();
+        new File(screenName).delete();
     }
     private static void drawWallsTomo(Point p1, Point p2) throws IOException {
         Point mousePos = mouseOffSetPosition(p1.x, p1.y);
-        moveMouseRelatively(mousePos);
+        moveMouse(mousePos);
         clickMouse(InputEvent.BUTTON1_DOWN_MASK);
         robot.delay(delayDuration);
 
         mousePos = mouseOffSetPosition(p2.x, p2.y);
-        moveMouseRelatively(mousePos);
+        moveMouse(mousePos);
         clickMouse(InputEvent.BUTTON1_DOWN_MASK);
         robot.delay(delayDuration);
 
         clickKey(KeyEvent.VK_ESCAPE);
         robot.delay(delayDuration);
     }
-    private static void drawWallsTomo(Point[] points) {
+    private static void drawWallsTomo(Point[] points) throws IOException {
         for (Point point : points) {
             Point mousePos = mouseOffSetPosition(point);
-            moveMouseRelatively(mousePos);
+            moveMouse(mousePos);
             clickMouse(InputEvent.BUTTON1_DOWN_MASK);
             robot.delay(delayDuration);
         }
@@ -124,7 +131,7 @@ public class MyRobot {
         FileReader fr = new FileReader(file);
         BufferedReader reader = new BufferedReader(fr);
 
-        robot.delay(2000);
+        robot.delay(1000);
         takeProperWallType(true);
 
         String line = reader.readLine();
@@ -143,7 +150,7 @@ public class MyRobot {
         FileReader fr = new FileReader(file);
         BufferedReader reader = new BufferedReader(fr);
 
-        robot.delay(2000);
+        robot.delay(1000);
         takeProperWallType(false);
 
         String line = reader.readLine();
@@ -161,21 +168,53 @@ public class MyRobot {
         reader.close();
         fr.close();
     }
-    public static void putContourOnMap(String filePath, Point _offset, int resulution) throws IOException {
-        setupScreen(filePath + "cropped.jpeg", _offset, resulution);
-        openPrevWindow();
+    public static void putContourOnMap(String filePath) throws IOException {
+        setupScreen(filePath + "cropped.jpeg");
         drawInnerContour(filePath + "inner.txt");
         drawOutsideContour(filePath + "outside.txt");
     }
-    public static BufferedImage toBuffered(Image img) {
-        BufferedImage bimage = new BufferedImage(img.getWidth(null), img.getHeight(null), BufferedImage.TYPE_INT_ARGB);
-        Graphics2D bGr = bimage.createGraphics();
-        bGr.drawImage(img, 0, 0, null);
-        bGr.dispose();
-        return bimage;
+    public static void pasteText(String text) {
+        StringSelection stringSelection = new StringSelection(text);
+        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+        clipboard.setContents(stringSelection, stringSelection);
+
+        robot.keyPress(KeyEvent.VK_CONTROL);
+        robot.keyPress(KeyEvent.VK_V);
+        robot.keyRelease(KeyEvent.VK_V);
+        robot.keyRelease(KeyEvent.VK_CONTROL);
+    }
+    public static void switchLevel(int floor) {
+        robot.mouseMove(40, 135);
+        robot.delay(200);
+        clickMouse(InputEvent.BUTTON1_DOWN_MASK);
+        robot.delay(200);
+
+        int delta_y = 20;
+        Point firstFloor = new Point(1635, 255);
+        robot.mouseMove(firstFloor.x, firstFloor.y + delta_y * floor);
+        robot.delay(200);
+        clickMouse(InputEvent.BUTTON1_DOWN_MASK);
+        robot.delay(1000);
+    }
+    public static void screenCapture(String fileName) {
+        BufferedImage image = null;
+        try {
+            image = new Robot().createScreenCapture(new Rectangle(Toolkit.getDefaultToolkit().getScreenSize()));
+        } catch (AWTException e) {
+            e.printStackTrace();
+        }
+        try {
+            ImageIO.write(image, "jpeg", new File(fileName));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public static void main(String[] args) throws IOException, AWTException {
-
+        MyRobot.openPrevWindow();
+        MyRobot.robot.delay(500);
+        String screenName = "screen.jpeg";
+        MyRobot.screenCapture(screenName);
+        ImageProcessor.screenCalibration(screenName);
     }
 }
