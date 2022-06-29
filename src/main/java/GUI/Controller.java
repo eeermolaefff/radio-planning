@@ -1,7 +1,8 @@
 package GUI;
 
 import OIP.ImageProcessor;
-import javafx.event.EventHandler;
+import PDFProcessor.PassportMaker;
+import PDFProcessor.RPMaker;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
@@ -11,21 +12,33 @@ import javafx.scene.control.Slider;
 import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.text.Text;
 import PDFProcessor.PDF2Image;
 import Robot.MyRobot;
-import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.image.Image;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
-
-import java.awt.*;
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 
 public class Controller {
+
+    @FXML
+    private MenuItem combinePhotosButton;
+
+    @FXML
+    private MenuItem rebuildRPButton;
+
+    @FXML
+    private MenuItem buildRPButton;
+
+    @FXML
+    private MenuItem buildPassportButton;
+
     @FXML
     private TextField DPIField;
 
@@ -78,7 +91,7 @@ public class Controller {
     private MenuItem openFileButton;
 
     enum ChosenCheckbox {DEFAULT, CALIBRATION, OUTSIDE, INNER};
-    enum EnvCondition {fileChoosing, floorChoosing, preCalibrationMode, calibrationMode, launchMode};
+    enum EnvCondition {fileChoosing, floorChoosing, preCalibrationMode, calibrationMode, launchMode, afterLaunchMode};
 
     private class Configuration {
         public boolean fillTable;
@@ -93,9 +106,12 @@ public class Controller {
             calibrationDifferenceField.setText(calibrationDifference.toString());
 
             kernelSizeSlider.setValue(kernelSize);
+            minWallLenField.setText(minWallLen.toString());
 
             switch (env) {
                 case fileChoosing:
+                    buildPassportButton.setDisable(false);
+                    buildRPButton.setDisable(false);
                     floorChoiceBox.setDisable(true);
                     kernelSizeSlider.setDisable(true);
                     kernelSizeField.setDisable(true);
@@ -191,12 +207,14 @@ public class Controller {
     }
 
     private String projectDir;
+    private String dataFolder = "E:\\YandexDisk\\!!! Проектирование Омск (1)\\Саша\\Новые проекты\\Данные";
+    private String readyProjectsFolder  ="E:\\YandexDisk\\!!! Проектирование Омск (1)\\Саша\\Новые проекты\\Готовые";
     private String selectedFilePath;
     private Integer calibrationDifference = 1;
     private Integer DPI = 100;
-    private final String format = ".png";
+    private final String extension = ".png";
     private Configuration[] configurations;
-    private int current_config;
+    private int currentConfig;
 
     private void clearDir() {
         for (String dirName : floorChoiceBox.getItems()) {
@@ -234,13 +252,20 @@ public class Controller {
 
         openFileButton.setOnAction(event -> {
             int numberOfPages = 0;
-            FileChooser fc = new FileChooser();
-            fc.setInitialDirectory(new File("E:/Clean"));
-            File selectedFile = fc.showOpenDialog(null);
+            FileChooser fileChooser = new FileChooser();
+            String initialDirName = dataFolder;
+            try {
+                initialDirName = new String(URLDecoder.decode(initialDirName, "UTF-8").getBytes("WINDOWS-1251")) + "\\";
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
+            fileChooser.setInitialDirectory(new File(initialDirName));
+            File selectedFile = fileChooser.showOpenDialog(null);
+
             if (selectedFile != null) {
                 selectedFilePath = selectedFile.getAbsolutePath();
                 try {
-                    numberOfPages = PDF2Image.splitPDF(selectedFilePath, 100, format);
+                    numberOfPages = PDF2Image.splitPDF(selectedFilePath, 100, extension);
                 } catch (IOException e) {
                     fileNameTxt.setText("Couldn't open PDF file");
                 }
@@ -259,7 +284,89 @@ public class Controller {
                 configurations[0].update();
             }
             else {
-                fileNameTxt.setText("Error");
+                fileNameTxt.setText("No file chosen");
+            }
+        });
+
+        combinePhotosButton.setOnAction(event -> {
+            DirectoryChooser directoryChooser = new DirectoryChooser();
+            directoryChooser.setInitialDirectory(new File(dataFolder));
+            File selectedDir = directoryChooser.showDialog(null);
+            if (selectedDir != null) {
+                try {
+                    String builderDir = selectedDir.getPath() + "\\";
+                    fileNameTxt.setText(builderDir);
+                    PassportMaker.combinePhotos(builderDir);
+                } catch (IOException e) {
+                    fileNameTxt.setText("Couldn't open folder");
+                }
+            }
+            else {
+                fileNameTxt.setText("No file chosen");
+            }
+        });
+
+        rebuildRPButton.setOnAction(event -> {
+            FileChooser fileChooser = new FileChooser();
+            String initialDirName = readyProjectsFolder;
+            try {
+                initialDirName = new String(URLDecoder.decode(initialDirName, "UTF-8").getBytes("WINDOWS-1251")) + "\\";
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
+            fileChooser.setInitialDirectory(new File(initialDirName));
+            File selectedFile = fileChooser.showOpenDialog(null);
+
+            if (selectedFile != null) {
+                try {
+                    String rebuildDir = selectedFile.getPath();
+                    fileNameTxt.setText(rebuildDir);
+                    RPMaker.remakeRP(rebuildDir);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    fileNameTxt.setText("Couldn't open file");
+                }
+            }
+            else {
+                fileNameTxt.setText("No file chosen");
+            }
+        });
+
+        buildRPButton.setOnAction(event -> {
+            DirectoryChooser directoryChooser = new DirectoryChooser();
+            directoryChooser.setInitialDirectory(new File(readyProjectsFolder));
+            File selectedDir = directoryChooser.showDialog(null);
+            if (selectedDir != null) {
+                try {
+                    String builderDir = selectedDir.getPath() + "\\";
+                    System.out.println(builderDir);
+                    fileNameTxt.setText(builderDir);
+                    RPMaker.makeRP(builderDir);
+                } catch (IOException e) {
+                    fileNameTxt.setText("Couldn't open folder");
+                }
+            }
+            else {
+                fileNameTxt.setText("No file chosen");
+            }
+        });
+
+        buildPassportButton.setOnAction(event -> {
+            DirectoryChooser directoryChooser = new DirectoryChooser();
+            directoryChooser.setInitialDirectory(new File(readyProjectsFolder));
+            File selectedDir = directoryChooser.showDialog(null);
+            if (selectedDir != null) {
+                try {
+                    String builderDir = selectedDir.getPath() + "\\";
+                    System.out.println(builderDir);
+                    fileNameTxt.setText(builderDir);
+                    PassportMaker.makePassport(builderDir);
+                } catch (IOException e) {
+                    fileNameTxt.setText("Couldn't open folder");
+                }
+            }
+            else {
+                fileNameTxt.setText("No file chosen");
             }
         });
 
@@ -268,126 +375,117 @@ public class Controller {
         });
 
         floorChoiceBox.getSelectionModel().selectedItemProperty().addListener(
-                (ObservableValue<? extends String> observable, String oldValue, String newValue) ->  {
-                    if (newValue != null && !newValue.equals(oldValue)) {
-                        current_config = Integer.parseInt(newValue.split(" ")[1]) - 1;
-                        if (configurations[current_config].env == EnvCondition.floorChoosing) {
-                            configurations[current_config].env = EnvCondition.preCalibrationMode;
-                            configurations[current_config].checkbox = ChosenCheckbox.DEFAULT;
+                (ObservableValue<? extends String> observable, String oldValue, String newValueStr) ->  {
+                    if (newValueStr != null && !newValueStr.equals(oldValue)) {
+                        currentConfig = Integer.parseInt(newValueStr.split(" ")[1]) - 1;
+                        if (configurations[currentConfig].env == EnvCondition.floorChoosing) {
+                            configurations[currentConfig].env = EnvCondition.preCalibrationMode;
+                            configurations[currentConfig].checkbox = ChosenCheckbox.DEFAULT;
                         }
 
-                        if (configurations[current_config].env == EnvCondition.launchMode)
+                        if (configurations[currentConfig].env == EnvCondition.launchMode)
                             launchButton.setText("Launch");
                         else
                             launchButton.setText("Process");
 
-                        configurations[current_config].update();
-                        if (configurations[current_config].checkbox == null) {
-                            configurations[current_config].checkbox = ChosenCheckbox.DEFAULT;
+                        configurations[currentConfig].update();
+                        if (configurations[currentConfig].checkbox == null) {
+                            configurations[currentConfig].checkbox = ChosenCheckbox.DEFAULT;
                         }
                     }
                 } );
 
-        kernelSizeSlider.valueProperty().addListener(new ChangeListener<Number>() {
-            @Override
-            public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-                if (configurations != null) {
-                    Integer kernelSize = (int) kernelSizeSlider.getValue();
-                    Integer wallLen = kernelSize * 3;
-                    configurations[current_config].kernelSize = kernelSize;
-                    configurations[current_config].minWallLen = wallLen;
-                    kernelSizeField.setText(kernelSize == 0 ? "" : kernelSize.toString());
-                    minWallLenField.setText(kernelSize == 0 ? "" : wallLen.toString());
-                }
+        kernelSizeSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if (configurations != null) {
+                int kernelSize = (int) kernelSizeSlider.getValue();
+                int wallLen = kernelSize * 3;
+                configurations[currentConfig].kernelSize = kernelSize;
+                configurations[currentConfig].minWallLen = wallLen;
+                kernelSizeField.setText(kernelSize == 0 ? "" : Integer.toString(kernelSize));
+                minWallLenField.setText(kernelSize == 0 ? "" : Integer.toString(wallLen));
             }
         });
 
         kernelSizeSlider.setOnMouseReleased(event -> {
             String field = kernelSizeField.getText();
             if (field.equals("")) {
-                configurations[current_config].env = EnvCondition.preCalibrationMode;
-                configurations[current_config].checkbox = ChosenCheckbox.DEFAULT;
+                configurations[currentConfig].env = EnvCondition.preCalibrationMode;
+                configurations[currentConfig].checkbox = ChosenCheckbox.DEFAULT;
             }
             else {
                 String filePath = projectDir + floorChoiceBox.getValue() + "/";
-                ImageProcessor.imageCalibration(filePath + "floor" + format,
-                        Integer.parseInt(field), configurations[current_config].fillTable, calibrationDifference);
-                configurations[current_config].checkbox = ChosenCheckbox.CALIBRATION;
-                configurations[current_config].env = EnvCondition.calibrationMode;
+                ImageProcessor.imageCalibration(filePath + "floor" + extension,
+                        Integer.parseInt(field), configurations[currentConfig].fillTable, calibrationDifference);
+                configurations[currentConfig].checkbox = ChosenCheckbox.CALIBRATION;
+                configurations[currentConfig].env = EnvCondition.calibrationMode;
             }
 
-            configurations[current_config].update();
+            configurations[currentConfig].update();
             launchButton.setText("Process");
         });
 
-        kernelSizeField.setOnKeyPressed(new EventHandler<KeyEvent>() {
-            @Override
-            public void handle(KeyEvent event) {
-                if (!event.getCode().equals(KeyCode.ENTER))
-                    return;
+        kernelSizeField.setOnKeyPressed(event -> {
+            if (!event.getCode().equals(KeyCode.ENTER))
+                return;
 
-                String newValue = kernelSizeField.getText();
-                if (newValue == null || newValue.equals("") || !newValue.matches("\\d*"))
-                    kernelSizeSlider.setValue(0);
-                else {
-                    int val = Integer.parseInt(newValue);
-                    kernelSizeSlider.setValue(val);
+            String newValueStr = kernelSizeField.getText();
+            if (newValueStr == null || newValueStr.equals("") || !newValueStr.matches("\\d*"))
+                kernelSizeSlider.setValue(0);
+            else {
+                int newValue = Integer.parseInt(newValueStr);
+                kernelSizeSlider.setValue(newValue);
 
-                    if (val == 0) {
-                        configurations[current_config].env = EnvCondition.preCalibrationMode;
-                        configurations[current_config].checkbox = ChosenCheckbox.DEFAULT;
-                    }
-                    else {
-                        configurations[current_config].env = EnvCondition.calibrationMode;
-                        String filePath = projectDir + floorChoiceBox.getValue() + "/";
-                        ImageProcessor.imageCalibration(filePath + "floor" + format,
-                                val, configurations[current_config].fillTable, calibrationDifference);
-                        configurations[current_config].checkbox = ChosenCheckbox.CALIBRATION;
-                    }
-                    configurations[current_config].update();
-                    launchButton.setText("Process");
+                if (newValue == 0) {
+                    configurations[currentConfig].env = EnvCondition.preCalibrationMode;
+                    configurations[currentConfig].checkbox = ChosenCheckbox.DEFAULT;
                 }
+                else {
+                    configurations[currentConfig].env = EnvCondition.calibrationMode;
+                    String filePath = projectDir + floorChoiceBox.getValue() + "/";
+                    ImageProcessor.imageCalibration(filePath + "floor" + extension,
+                            newValue, configurations[currentConfig].fillTable, calibrationDifference);
+                    configurations[currentConfig].checkbox = ChosenCheckbox.CALIBRATION;
+                }
+                configurations[currentConfig].update();
+                launchButton.setText("Process");
             }
         });
 
-        minWallLenField.setOnKeyPressed(new EventHandler<KeyEvent>() {
-            @Override
-            public void handle(KeyEvent event) {
-                if (!event.getCode().equals(KeyCode.ENTER))
-                    return;
+        minWallLenField.setOnKeyPressed(event -> {
+            if (!event.getCode().equals(KeyCode.ENTER))
+                return;
 
-                String newValue = minWallLenField.getText();
-                if (newValue == null || newValue.equals("") || newValue.equals("0")  || !newValue.matches("\\d*")) {
-                    minWallLenField.setText("");
-                    configurations[current_config].env = EnvCondition.calibrationMode;
-                }
-                else {
-                    String filePath = projectDir + floorChoiceBox.getValue() + "/";
-                    configurations[current_config].minWallLen = Integer.parseInt(newValue);
-                    ImageProcessor.processImage(filePath + "floor" + format, filePath + "calibration" + format,
-                            configurations[current_config].kernelSize,   configurations[current_config].minWallLen,
-                            configurations[current_config].contourExp);
-                    configurations[current_config].env = EnvCondition.launchMode;
-                    configurations[current_config].checkbox = ChosenCheckbox.INNER;
-                }
-                configurations[current_config].update();
+            String newValueStr = minWallLenField.getText();
+            if (newValueStr == null || newValueStr.equals("") || newValueStr.equals("0")  || !newValueStr.matches("\\d*")) {
+                minWallLenField.setText("");
+                configurations[currentConfig].env = EnvCondition.calibrationMode;
             }
+            else {
+                String filePath = projectDir + floorChoiceBox.getValue() + "/";
+                configurations[currentConfig].minWallLen = Integer.parseInt(newValueStr);
+                ImageProcessor.processImage(filePath + "floor" + extension, filePath + "calibration" + extension,
+                        configurations[currentConfig].kernelSize,   configurations[currentConfig].minWallLen,
+                        configurations[currentConfig].contourExp);
+                configurations[currentConfig].env = EnvCondition.launchMode;
+                configurations[currentConfig].checkbox = ChosenCheckbox.INNER;
+            }
+            configurations[currentConfig].update();
         });
 
         calibrationDifferenceField.setOnAction(event -> {
-            String newValue = calibrationDifferenceField.getText();
+            String newValueStr = calibrationDifferenceField.getText();
 
-            if (newValue == null || newValue.equals("") || newValue.equals("0") || !newValue.matches("\\d*"))
+            if (newValueStr == null || newValueStr.equals("") || newValueStr.equals("0") || !newValueStr.matches("\\d*"))
                 calibrationDifferenceField.setText("");
             else {
-                calibrationDifference = Integer.parseInt(newValue);
+                calibrationDifference = Integer.parseInt(newValueStr);
 
                 String filePath = projectDir + floorChoiceBox.getValue() + "/";
-                ImageProcessor.imageCalibration(filePath + "floor" + format, configurations[current_config].kernelSize,
-                        configurations[current_config].fillTable, calibrationDifference);
+                ImageProcessor.imageCalibration(filePath + "floor" + extension, configurations[currentConfig].kernelSize,
+                        configurations[currentConfig].fillTable, calibrationDifference);
 
-                configurations[current_config].checkbox = ChosenCheckbox.CALIBRATION;
-                configurations[current_config].update();
+                configurations[currentConfig].checkbox = ChosenCheckbox.CALIBRATION;
+                configurations[currentConfig].update();
             }
         });
 
@@ -399,111 +497,97 @@ public class Controller {
                 DPI = Integer.parseInt(newValue);
                 if (selectedFilePath != null) {
                     try {
-                        PDF2Image.splitPDF(selectedFilePath, DPI, format);
+                        PDF2Image.splitPDF(selectedFilePath, DPI, extension);
                     } catch (IOException e) {
                         fileNameTxt.setText("Couldn't open PDF file");
                     }
 
-                    configurations[current_config].env = EnvCondition.calibrationMode;
-                    configurations[current_config].checkbox = ChosenCheckbox.DEFAULT;
+                    configurations[currentConfig].env = EnvCondition.calibrationMode;
+                    configurations[currentConfig].checkbox = ChosenCheckbox.DEFAULT;
                     kernelSizeSlider.setValue(0);
 
-                    configurations[current_config].update();
+                    configurations[currentConfig].update();
                 }
             }
         });
 
-        fillTableCheckbox.selectedProperty().addListener(new ChangeListener<Boolean>() {
-            @Override
-            public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
-                String field = kernelSizeField.getText();
-                if (!field.equals("") && !field.equals("0")) {
-                    String filePath = projectDir + floorChoiceBox.getValue() + "/";
-                    ImageProcessor.imageCalibration(filePath + "floor" + format,
-                            Integer.parseInt(field), newValue, calibrationDifference);
-                    configurations[current_config].fillTable = newValue;
-                    configurations[current_config].env = EnvCondition.calibrationMode;
-                    configurations[current_config].checkbox = ChosenCheckbox.CALIBRATION;
-                    configurations[current_config].update();
-                }
+        fillTableCheckbox.selectedProperty().addListener((observable, oldValue, newValue) -> {
+            String field = kernelSizeField.getText();
+            if (!field.equals("") && !field.equals("0")) {
+                String filePath = projectDir + floorChoiceBox.getValue() + "/";
+                ImageProcessor.imageCalibration(filePath + "floor" + extension,
+                        Integer.parseInt(field), newValue, calibrationDifference);
+
+                configurations[currentConfig].fillTable = newValue;
+                configurations[currentConfig].env = EnvCondition.calibrationMode;
+                configurations[currentConfig].checkbox = ChosenCheckbox.CALIBRATION;
+                configurations[currentConfig].update();
             }
         });
 
-        calibrationCheckbox.selectedProperty().addListener(new ChangeListener<Boolean>() {
-            @Override
-            public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
-                if (newValue) {
-                    defaultCheckbox.setSelected(!newValue);
-                    outsideCheckbox.setSelected(!newValue);
-                    innerCheckbox.setSelected(!newValue);
-                    setFloorImage("calibration" + format);
-                    configurations[current_config].checkbox = ChosenCheckbox.CALIBRATION;
-                }
+        calibrationCheckbox.selectedProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue) {
+                defaultCheckbox.setSelected(false);
+                outsideCheckbox.setSelected(false);
+                innerCheckbox.setSelected(false);
+
+                setFloorImage("calibration" + extension);
+                configurations[currentConfig].checkbox = ChosenCheckbox.CALIBRATION;
             }
         });
 
-        defaultCheckbox.selectedProperty().addListener(new ChangeListener<Boolean>() {
-            @Override
-            public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
-                if (newValue) {
-                    calibrationCheckbox.setSelected(!newValue);
-                    outsideCheckbox.setSelected(!newValue);
-                    innerCheckbox.setSelected(!newValue);
-                    setFloorImage("floor" + format);
-                    configurations[current_config].checkbox = ChosenCheckbox.DEFAULT;
-                }
+        defaultCheckbox.selectedProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue) {
+                calibrationCheckbox.setSelected(false);
+                outsideCheckbox.setSelected(false);
+                innerCheckbox.setSelected(false);
+                setFloorImage("floor" + extension);
+                configurations[currentConfig].checkbox = ChosenCheckbox.DEFAULT;
             }
         });
 
-        outsideCheckbox.selectedProperty().addListener(new ChangeListener<Boolean>() {
-            @Override
-            public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
-                if (newValue) {
-                    calibrationCheckbox.setSelected(!newValue);
-                    defaultCheckbox.setSelected(!newValue);
-                    innerCheckbox.setSelected(!newValue);
-                    setFloorImage("outsideCoverage" + format);
-                    configurations[current_config].checkbox = ChosenCheckbox.OUTSIDE;
-                }
+        outsideCheckbox.selectedProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue) {
+                calibrationCheckbox.setSelected(false);
+                defaultCheckbox.setSelected(false);
+                innerCheckbox.setSelected(false);
+                setFloorImage("outsideCoverage" + extension);
+                configurations[currentConfig].checkbox = ChosenCheckbox.OUTSIDE;
             }
         });
 
-        innerCheckbox.selectedProperty().addListener(new ChangeListener<Boolean>() {
-            @Override
-            public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
-                if (newValue) {
-                    calibrationCheckbox.setSelected(!newValue);
-                    defaultCheckbox.setSelected(!newValue);
-                    outsideCheckbox.setSelected(!newValue);
-                    setFloorImage("innerCoverage" + format);
-                    configurations[current_config].checkbox = ChosenCheckbox.INNER;
-                }
+        innerCheckbox.selectedProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue) {
+                calibrationCheckbox.setSelected(false);
+                defaultCheckbox.setSelected(false);
+                outsideCheckbox.setSelected(false);
+                setFloorImage("innerCoverage" + extension);
+                configurations[currentConfig].checkbox = ChosenCheckbox.INNER;
             }
         });
 
         launchButton.setOnAction(event -> {
             String filePath = projectDir + floorChoiceBox.getValue() + "/";
-            if (configurations[current_config].env == EnvCondition.calibrationMode) {
-                ImageProcessor.processImage(filePath + "floor" + format, filePath + "calibration" + format,
-                        configurations[current_config].kernelSize,   configurations[current_config].minWallLen,
-                        configurations[current_config].contourExp);
+            if (configurations[currentConfig].env == EnvCondition.calibrationMode) {
+                ImageProcessor.processImage(filePath + "floor" + extension, filePath + "calibration" + extension,
+                        configurations[currentConfig].kernelSize,   configurations[currentConfig].minWallLen,
+                        configurations[currentConfig].contourExp);
 
-                configurations[current_config].env = EnvCondition.launchMode;
-                configurations[current_config].checkbox = ChosenCheckbox.INNER;
-                configurations[current_config].update();
+                configurations[currentConfig].env = EnvCondition.launchMode;
+                configurations[currentConfig].checkbox = ChosenCheckbox.INNER;
+                configurations[currentConfig].update();
 
                 launchButton.setText("Launch");
             }
-            else if(configurations[current_config].env == EnvCondition.launchMode) {
+            else if(configurations[currentConfig].env == EnvCondition.launchMode) {
                 try {
                     MyRobot.openPrevWindow();
-                    for (int i = current_config; i < configurations.length; i++) {
+                    for (int i = currentConfig; i < configurations.length; i++) {
                         if (configurations[i].env != EnvCondition.launchMode)
                             continue;
-
-                        filePath = projectDir + "Floor " + (i + 1) + "/";
-                        MyRobot.switchLevel(i);
-                        MyRobot.putContourOnMap(filePath);
+                        filePath = projectDir + "Floor " + (i+1) +"/";
+                        MyRobot.switchFloor(i);
+                        MyRobot.putContourOnMap(filePath, extension);
 
                     }
                 } catch (IOException e) {
