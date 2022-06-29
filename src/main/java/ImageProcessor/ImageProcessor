@@ -1,0 +1,13 @@
+package OIP;
+
+public class ImageProcessor {
+    public static native void processImage(String filePath, String noEnvImage, int kernelSize, int minWallLen, int contourExpansion);
+    public static native void imageCalibration(String filePath, int kernelSize, boolean fillTable, int difference);
+    public static native void screenCalibration(String filePath);
+
+    static {
+        System.loadLibrary("opencv_world454");
+        System.loadLibrary("ImageProcessor");
+    }
+
+}
