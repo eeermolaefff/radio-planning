@@ -16,3 +16,14 @@ ____
 ____
 
 ![Главный экран приложения после загрузки схем здания](https://github.com/Ermolaefff/OIP/tree/Java/Screens/MainScreen.png)
+
+
+![Внутренние стены здания](https://github.com/Ermolaefff/OIP/tree/Java/Screens/InnerContour.png)
+
+
+![Внешние стены здания](https://github.com/Ermolaefff/OIP/tree/Java/Screens/OutsideContour.png)
+
+
+____
+
+Для автоматизированной отрисовки контуров необходимо нажать кнопку Launch 
