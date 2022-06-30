@@ -15,4 +15,4 @@ ____
 
 ____
 
-![alt text](https://github.com/Ermolaefff/OIP/tree/Java/Screens/MainScreen.png)
+![Главный экран приложения после загрузки схем здания](https://github.com/Ermolaefff/OIP/tree/Java/Screens/MainScreen.png)
