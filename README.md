@@ -15,4 +15,4 @@ ____
 
 ____
 
-![alt text](https://github.com/Ermolaefff/OIP/tree/Java/Screens/Главный экран.png)
+![alt text](https://github.com/Ermolaefff/OIP/tree/Java/Screens/MainScreen.png)
