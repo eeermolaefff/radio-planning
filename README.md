@@ -1,29 +1,36 @@
-# **OIP**
+# **Optical Image Processor**
 
-### **Optical Image Processor**
+### Программа для автоматизации процесса радиопланирования
+
 ____
-
 
 Блок Java кода отвечает за реализацию графического интерфейса и фактическую функциональность приложения.
-____
 
-- Классы из пакета PDFProcessor осуществляют предварительные преобразование шаблонов PDF файлов и их сборку в готовый проект.
+- Классы из пакета `PDFProcessor` осуществляют предварительные преобразование шаблонов PDF файлов и их сборку в готовый проект.
 
-- Класс ImageProcessor позволяет вызывать реализованный на C++ .dll модуль, осуществляющий выделение основных компонентов из схемы здания и их запись в тектовый файл.
+- Класс `ImageProcessor` позволяет вызывать реализованный на C++ `.dll` модуль, осуществляющий выделение основных компонентов из схемы здания и их запись в тектовый файл.
 
-- Класс MyRobot наносит данные из полученных файлов на новую схему.
+- Класс `MyRobot` наносит данные из полученных файлов на новую схему.
 
-____
-
-![Главный экран приложения после загрузки схем здания](https://github.com/Ermolaefff/OIP/tree/Java/Screens/MainScreen.png)
-
-
-![Внутренние стены здания](https://github.com/Ermolaefff/OIP/tree/Java/Screens/InnerContour.png)
-
-
-![Внешние стены здания](https://github.com/Ermolaefff/OIP/tree/Java/Screens/OutsideContour.png)
-
+Для автоматизированной отрисовки контуров необходимо нажать кнопку `Launch` 
 
 ____
 
-Для автоматизированной отрисовки контуров необходимо нажать кнопку Launch 
+<h4 align="center">
+  <img alt="MainScreen" src="Screens/MainScreen.png">
+</h4>
+
+____
+
+<h4 align="center">
+  <img alt="InnerContour" src="Screens/InnerContour.png">
+</h4>
+
+____
+
+<h4 align="center">
+  <img alt="OutsideContour" src="Screens/OutsideContour.png">
+</h4>
+
+____
+
